@@ -1,16 +1,15 @@
-// firebase-config.js - CONSISTENT VERSION 9.22.1
+// firebase-config.js - NEW VERSION 9.22.1
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBaEkKJzyohsq6GK5GWygai0q3V0O_MkLY",
-  authDomain: "web-foksi-9acb9.firebaseapp.com",
-  projectId: "web-foksi-9acb9",
-  storageBucket: "web-foksi-9acb9.firebasestorage.app",
-  messagingSenderId: "811305636316",
-  appId: "1:811305636316:web:42718618e39e56ee203f19",
-  measurementId: "G-BN0KBQQMBJ"
+  apiKey: "AIzaSyB_APiU6azAWX5w5qANpInI-6QWX-IDzeA",
+  authDomain: "web-absen-13c0f.firebaseapp.com",
+  projectId: "web-absen-13c0f",
+  storageBucket: "web-absen-13c0f.firebasestorage.app",
+  messagingSenderId: "1026553673394",
+  appId: "1:1026553673394:web:9aee69887b5b635b727bab"
 };
 
 // Initialize Firebase
