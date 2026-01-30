@@ -195,9 +195,8 @@
             authDomain: "web-absen-13c0f.firebaseapp.com",
             projectId: "web-absen-13c0f",
             storageBucket: "web-absen-13c0f.firebasestorage.app",
-            messagingSenderId: "811305636316",
-            appId: "1:811305636316:web:42718618e39e56ee203f19",
-            measurementId: "G-BN0KBQQMBJ"
+            messagingSenderId: "1026553673394",
+            appId: "1:1026553673394:web:9aee69887b5b635b727bab"
         };
 
         // Initialize Firebase
@@ -288,6 +287,10 @@
                     errorMsg = "Username tidak valid. Gunakan username yang valid.";
                 } else if (error.code === 'auth/network-request-failed') {
                     errorMsg = "Koneksi internet bermasalah. Periksa koneksi Anda.";
+                } else if (error.code === 'auth/operation-not-allowed') {
+                    errorMsg = "Operasi tidak diizinkan. Hubungi developer.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    errorMsg = "Terlalu banyak permintaan. Coba lagi nanti.";
                 }
                 
                 msg.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${errorMsg}`;
