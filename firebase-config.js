@@ -1,8 +1,9 @@
-// firebase-config.js - NEW VERSION 12.8.0
+// firebase-config.js - Firebase v12.8.0
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyB_APiU6azAWX5w5qANpInI-6QWX-IDzeA",
   authDomain: "web-absen-13c0f.firebaseapp.com",

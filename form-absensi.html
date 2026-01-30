@@ -6,6 +6,7 @@
     <title>Form Absensi - FOKSI</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="dashboard-container">
@@ -169,29 +170,24 @@
         </div>
     </div>
 
-    <script type="module" src="firebase-config.js"></script>
     <script type="module">
-    import { checkAuth, logoutUser } from './auth.js';
-    import { submitAbsensi, checkAbsensiStatus } from './database.js';
+        import { checkAuth, logoutUser } from './auth.js';
+        import { submitAbsensi, checkAbsensiStatus } from './database.js';
         
-        // Check authentication
         const user = checkAuth();
         if (!user || user.role !== 'anggota') {
             window.location.href = 'index.html';
         }
         
-        // Initialize user data
         document.getElementById('userName').textContent = user.nama;
         document.getElementById('userJabatan').textContent = user.jabatan;
-        document.getElementById('userAvatar').textContent = user.nama.charAt(0);
+        document.getElementById('userAvatar').textContent = user.nama.charAt(0).toUpperCase();
         
-        // Fill form with user data
         document.getElementById('nama').value = user.nama;
         document.getElementById('jabatan').value = user.jabatan;
         document.getElementById('regional').value = user.regional;
         document.getElementById('sekolah').value = user.sekolah;
         
-        // Update date
         function updateDate() {
             const now = new Date();
             const options = { 
@@ -205,7 +201,6 @@
         }
         updateDate();
         
-        // Check absensi status
         async function checkStatus() {
             try {
                 const result = await checkAbsensiStatus();
@@ -221,7 +216,6 @@
                     alertDiv.style.display = 'flex';
                     submitBtn.disabled = false;
                     
-                    // Start timer countdown
                     startCountdown(result.settings.jam_tutup);
                 } else {
                     alertDiv.className = 'alert alert-danger';
@@ -232,7 +226,6 @@
                     alertDiv.style.display = 'flex';
                     submitBtn.disabled = true;
                     
-                    // Disable form
                     document.querySelectorAll('input[name="status"]').forEach(radio => {
                         radio.disabled = true;
                     });
@@ -244,7 +237,6 @@
             }
         }
         
-        // Timer countdown
         function startCountdown(closeTime) {
             function updateTimer() {
                 const now = new Date();
@@ -272,7 +264,6 @@
             setInterval(updateTimer, 1000);
         }
         
-        // Form submission
         document.getElementById('absensiForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -288,7 +279,6 @@
                 
                 const result = await submitAbsensi({ status, keterangan });
                 
-                // Show success modal
                 const now = new Date();
                 const successDetails = `
                     <p><strong>Nama:</strong> ${user.nama}</p>
@@ -300,7 +290,6 @@
                 document.getElementById('successDetails').innerHTML = successDetails;
                 document.getElementById('successModal').classList.add('active');
                 
-                // Reset form
                 document.getElementById('absensiForm').reset();
                 
             } catch (error) {
@@ -341,15 +330,13 @@
         }
         
         function lihatRiwayat() {
-            // Implement history view
-            alert('Fitur riwayat akan segera tersedia');
+            window.location.href = 'anggota-dashboard.html#riwayat';
         }
         
         function logout() {
             logoutUser();
         }
         
-        // Initialize
         checkStatus();
     </script>
     

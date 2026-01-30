@@ -1,13 +1,12 @@
 {
   "name": "absensi-foksi",
   "version": "2.0.0",
-  "description": "Website Absensi FOKSI dengan Firebase v12.8.0",
+  "description": "Website Absensi FOKSI dengan Firebase",
   "scripts": {
-    "dev": "npx serve"
+    "dev": "npx serve",
+    "start": "npx serve"
   },
-  "dependencies": {
-    "xlsx": "^0.18.5"
-  },
+  "dependencies": {},
   "devDependencies": {
     "serve": "^14.0.0"
   }

@@ -1,8 +1,9 @@
-// auth.js - FIXED VERSION WITH @gmail.com - UPDATED 12.8.0
+// auth.js - Authentication Functions
 import { auth, db } from './firebase-config.js';
 import { 
     signInWithEmailAndPassword,
-    createUserWithEmailAndPassword 
+    createUserWithEmailAndPassword,
+    signOut 
 } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { 
     doc, 
@@ -17,26 +18,23 @@ import {
 // Login function
 export async function loginUser(username, password, role) {
     try {
-        console.log("=== LOGIN PROCESS START ===");
-        console.log("Username:", username, "Role:", role);
+        console.log("Login process started for:", username);
         
-        // Format email for Firebase Auth - USING @gmail.com
+        // Format email with @gmail.com
         const email = `${username}@gmail.com`;
         console.log("Email for auth:", email);
         
         // Sign in with Firebase Auth
-        console.log("Attempting Firebase Auth sign in...");
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        console.log("Firebase Auth SUCCESS - UID:", user.uid);
+        console.log("Firebase Auth success, UID:", user.uid);
         
         // Get user data from Firestore
-        console.log("Fetching user data from Firestore...");
         const userDoc = await getDoc(doc(db, "users", user.uid));
         
         if (!userDoc.exists()) {
             console.error("User document not found in Firestore");
-            throw new Error("Data pengguna tidak ditemukan di database. Silakan hubungi admin.");
+            throw new Error("Data pengguna tidak ditemukan. Silakan hubungi admin.");
         }
         
         const userData = userDoc.data();
@@ -51,7 +49,7 @@ export async function loginUser(username, password, role) {
         // Check role
         if (userData.role !== role) {
             console.error(`Role mismatch. Expected: ${role}, Got: ${userData.role}`);
-            throw new Error(`Role tidak sesuai. Akun ini adalah ${userData.role || 'tidak diketahui'}, bukan ${role}`);
+            throw new Error(`Role tidak sesuai. Akun ini adalah ${userData.role || 'tidak diketahui'}`);
         }
         
         // Store user data in localStorage
@@ -68,7 +66,7 @@ export async function loginUser(username, password, role) {
         
         console.log("Storing user to localStorage:", userToStore);
         localStorage.setItem('user', JSON.stringify(userToStore));
-        console.log("Login SUCCESS! Redirecting...");
+        console.log("Login success! Redirecting...");
         
         // Redirect based on role
         setTimeout(() => {
@@ -82,12 +80,8 @@ export async function loginUser(username, password, role) {
         return { success: true, user: userToStore };
         
     } catch (error) {
-        console.error("=== LOGIN ERROR ===");
-        console.error("Error code:", error.code);
-        console.error("Error message:", error.message);
-        console.error("Full error:", error);
+        console.error("Login error:", error);
         
-        // Translate error messages
         let errorMessage = error.message;
         
         if (error.code) {
@@ -95,19 +89,16 @@ export async function loginUser(username, password, role) {
                 case 'auth/invalid-credential':
                 case 'auth/user-not-found':
                 case 'auth/wrong-password':
-                    errorMessage = "Username atau password salah. Pastikan username dan password benar.";
+                    errorMessage = "Username atau password salah";
                     break;
                 case 'auth/user-disabled':
-                    errorMessage = "Akun ini dinonaktifkan. Hubungi admin.";
+                    errorMessage = "Akun dinonaktifkan. Hubungi admin.";
                     break;
                 case 'auth/too-many-requests':
                     errorMessage = "Terlalu banyak percobaan gagal. Coba lagi nanti.";
                     break;
                 case 'auth/network-request-failed':
-                    errorMessage = "Koneksi internet bermasalah. Periksa koneksi Anda.";
-                    break;
-                case 'auth/operation-not-allowed':
-                    errorMessage = "Metode login tidak diizinkan. Hubungi admin.";
+                    errorMessage = "Koneksi internet bermasalah";
                     break;
                 default:
                     errorMessage = `Login gagal: ${error.code}`;
@@ -153,7 +144,7 @@ export async function registerUser(userData) {
         
         let errorMessage = error.message;
         if (error.code === 'auth/email-already-in-use') {
-            errorMessage = "Username sudah digunakan. Coba username lain.";
+            errorMessage = "Username sudah digunakan";
         } else if (error.code === 'auth/weak-password') {
             errorMessage = "Password terlalu lemah. Minimal 6 karakter.";
         }
@@ -186,6 +177,14 @@ export function checkAuth() {
 export function logoutUser() {
     console.log("Logging out user...");
     localStorage.removeItem('user');
+    
+    // Sign out from Firebase
+    signOut(auth).then(() => {
+        console.log("User signed out from Firebase");
+    }).catch((error) => {
+        console.error("Error signing out:", error);
+    });
+    
     setTimeout(() => {
         window.location.href = 'index.html';
     }, 100);

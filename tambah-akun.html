@@ -6,6 +6,7 @@
     <title>Tambah Akun - Admin FOKSI</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="dashboard-container">
@@ -16,7 +17,7 @@
                     <h2>Admin FOKSI</h2>
                 </div>
                 <div class="user-info">
-                    <div class="user-avatar">A</div>
+                    <div class="user-avatar" id="adminAvatar">A</div>
                     <div class="user-details">
                         <h3 id="adminName">Admin Name</h3>
                         <p id="adminRole">Administrator</p>
@@ -191,7 +192,12 @@
                             </tr>
                         </thead>
                         <tbody id="membersTableBody">
-                            <!-- Data akan diisi oleh JavaScript -->
+                            <tr>
+                                <td colspan="6" class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <span>Memuat daftar anggota...</span>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -199,11 +205,10 @@
         </main>
     </div>
 
-    <script type="module" src="firebase-config.js"></script>
     <script type="module">
-    import { checkAuth, logoutUser, registerUser, checkUsernameExists } from './auth.js';
-    import { db } from './firebase-config.js';
-    import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+        import { checkAuth, logoutUser, registerUser, checkUsernameExists } from './auth.js';
+        import { db } from './firebase-config.js';
+        import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
         
         // Check authentication
         const user = checkAuth();
@@ -212,7 +217,8 @@
         }
         
         // Set admin name
-        document.getElementById('adminName').textContent = user.nama;
+        document.getElementById('adminName').textContent = user.nama || 'Admin';
+        document.getElementById('adminAvatar').textContent = user.nama ? user.nama.charAt(0).toUpperCase() : 'A';
         
         // Load members list
         async function loadMembers() {
@@ -229,26 +235,50 @@
                     if (member.role === 'anggota') {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td>${member.nama}</td>
-                            <td>${member.username}</td>
-                            <td>${member.jabatan}</td>
-                            <td>${member.regional}</td>
-                            <td>${member.sekolah}</td>
+                            <td>${member.nama || '-'}</td>
+                            <td>${member.username || '-'}</td>
+                            <td>${member.jabatan || '-'}</td>
+                            <td>${member.regional || '-'}</td>
+                            <td>${member.sekolah || '-'}</td>
                             <td>${formatDate(member.createdAt)}</td>
                         `;
                         tbody.appendChild(row);
                     }
                 });
                 
+                if (tbody.children.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <p>Belum ada anggota terdaftar</p>
+                            </td>
+                        </tr>
+                    `;
+                }
+                
             } catch (error) {
                 console.error("Error loading members:", error);
+                const tbody = document.getElementById('membersTableBody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="error-state">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <p>Gagal memuat daftar anggota</p>
+                        </td>
+                    </tr>
+                `;
             }
         }
         
         function formatDate(dateString) {
             if (!dateString) return '-';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('id-ID');
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('id-ID');
+            } catch (error) {
+                return dateString;
+            }
         }
         
         // Check username availability
@@ -324,7 +354,7 @@
                 // Prepare user data
                 const userData = {
                     nama: document.getElementById('nama').value.trim(),
-                    username: document.getElementById('username').value.trim(),
+                    username: document.getElementById('username').value.trim().toLowerCase(),
                     password: password,
                     jabatan: document.getElementById('jabatan').value,
                     regional: document.getElementById('regional').value,
@@ -357,7 +387,7 @@
                 showAlert('error', error.message);
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Tambah Anggota';
             }
         });
         
@@ -430,6 +460,7 @@
             border-radius: 8px;
             font-size: 0.9rem;
             transition: var(--transition);
+            background: var(--bg-color);
         }
         
         .search-box input:focus {

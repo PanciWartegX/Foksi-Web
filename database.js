@@ -1,4 +1,4 @@
-// database.js - UPDATED VERSION 12.8.0
+// database.js - Database Functions
 import { db } from './firebase-config.js';
 import { 
     collection,
@@ -92,6 +92,7 @@ function isAbsensiOpen(settings) {
 }
 
 function timeToMinutes(timeStr) {
+    if (!timeStr) return 0;
     const [hours, minutes] = timeStr.split(':').map(Number);
     return hours * 60 + minutes;
 }
@@ -153,7 +154,6 @@ export async function getAllAbsensi(startDate = null, endDate = null) {
             absensiList.push({
                 id: doc.id,
                 ...data,
-                // Convert timestamp to Date object
                 timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : data.timestamp
             });
         });
