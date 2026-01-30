@@ -47,13 +47,17 @@
                     </label>
                 </div>
                 
-                <button type="submit" class="login-btn">
+                <button type="submit" class="login-btn" id="loginBtn">
                     <i class="fas fa-sign-in-alt"></i>
                     Masuk
                 </button>
                 
                 <div class="login-footer">
                     <p>© 2024 FOKSI | Sistem Absensi Online</p>
+                    <!-- Link tambahan untuk setup awal -->
+                    <p style="margin-top: 10px; font-size: 0.8rem;">
+                        <a href="setup-admin.html" style="color: var(--primary-color);">Buat Akun Admin Pertama</a>
+                    </p>
                 </div>
             </form>
             
@@ -62,7 +66,55 @@
     </div>
 
     <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="auth.js"></script>
+    
+    <!-- Script Utama Login -->
+    <script type="module">
+        import { loginUser } from './auth.js';
+
+        const loginForm = document.getElementById('loginForm');
+        const errorMessageDiv = document.getElementById('errorMessage');
+        const loginBtn = document.getElementById('loginBtn');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Reset error
+            errorMessageDiv.style.display = 'none';
+            errorMessageDiv.textContent = '';
+            
+            // Loading state
+            const originalBtnText = loginBtn.innerHTML;
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const role = document.querySelector('input[name="role"]:checked').value;
+
+            try {
+                await loginUser(username, password, role);
+                // Jika sukses, auth.js akan mengarahkan halaman (redirect)
+            } catch (error) {
+                console.error(error);
+                errorMessageDiv.style.display = 'block';
+                
+                // Terjemahkan error umum Firebase
+                let msg = error.message;
+                if(msg.includes('auth/invalid-credential') || msg.includes('auth/user-not-found') || msg.includes('auth/wrong-password')) {
+                    msg = "Username atau password salah.";
+                } else if (msg.includes('Data pengguna tidak ditemukan')) {
+                    msg = "Akun terdaftar di Auth tapi data belum ada di Database. Silakan hubungi developer atau gunakan halaman Setup.";
+                }
+
+                errorMessageDiv.textContent = msg;
+                
+                // Reset button
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = originalBtnText;
+            }
+        });
+    </script>
+
     <script>
         function togglePassword() {
             const passwordInput = document.getElementById('password');
