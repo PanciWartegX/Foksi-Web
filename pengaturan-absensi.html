@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengaturan Absensi - Admin FOKSI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="fas fa-clipboard-check"></i>
+                    <h2>Admin FOKSI</h2>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">A</div>
+                    <div class="user-details">
+                        <h3 id="adminName">Admin Name</h3>
+                        <p id="adminRole">Administrator</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="admin-dashboard.html" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="tambah-akun.html" class="nav-item">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Tambah Akun</span>
+                </a>
+                <a href="pengaturan-absensi.html" class="nav-item active">
+                    <i class="fas fa-cog"></i>
+                    <span>Pengaturan Absensi</span>
+                </a>
+                <a href="data-absensi.html" class="nav-item">
+                    <i class="fas fa-database"></i>
+                    <span>Data Absensi</span>
+                </a>
+            </div>
+            
+            <div class="logout-btn">
+                <a href="#" onclick="logout()" class="nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="header">
+                <h1>Pengaturan Absensi</h1>
+                <button class="btn-secondary" onclick="window.location.href='admin-dashboard.html'">
+                    <i class="fas fa-arrow-left"></i>
+                    Kembali
+                </button>
+            </header>
+
+            <!-- Current Settings -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Pengaturan Saat Ini</h2>
+                    <div class="status-indicator">
+                        <span id="absensiStatusLabel" class="status-badge">Tidak Aktif</span>
+                    </div>
+                </div>
+                
+                <div id="currentSettings">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Memuat pengaturan...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Pengaturan -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Atur Jadwal Absensi</h2>
+                </div>
+                
+                <form id="settingsForm">
+                    <div class="form-group">
+                        <label class="form-label">Nama Kegiatan <span class="required">*</span></label>
+                        <input type="text" id="namaKegiatan" class="form-control" required 
+                               placeholder="Contoh: Rapat Rutin Bulanan">
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Tanggal Absensi <span class="required">*</span></label>
+                            <input type="date" id="tanggal" class="form-control" required 
+                                   min="<?php echo date('Y-m-d'); ?>">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Waktu Mulai <span class="required">*</span></label>
+                            <input type="time" id="jamBuka" class="form-control" required 
+                                   value="08:00">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Waktu Selesai <span class="required">*</span></label>
+                            <input type="time" id="jamTutup" class="form-control" required 
+                                   value="17:00">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Catatan (Opsional)</label>
+                        <textarea id="catatan" class="form-control" rows="3" 
+                                  placeholder="Tambahkan instruksi atau informasi penting..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary" id="submitBtn">
+                            <i class="fas fa-save"></i>
+                            Simpan Pengaturan
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="resetForm()">
+                            <i class="fas fa-redo"></i>
+                            Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- History Pengaturan -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Riwayat Pengaturan</h2>
+                </div>
+                <div class="table-container">
+                    <table id="settingsHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>Kegiatan</th>
+                                <th>Tanggal</th>
+                                <th>Jam</th>
+                                <th>Diperbarui</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="settingsHistoryBody">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module">
+        import { checkAuth, logoutUser } from './auth.js';
+        import { saveAbsensiSettings, getAbsensiSettings } from './database.js';
+        import { db } from './firebase-config.js';
+        import { collection, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+        
+        // Check authentication
+        const user = checkAuth();
+        if (!user || user.role !== 'admin') {
+            window.location.href = 'index.html';
+        }
+        
+        // Set admin name
+        document.getElementById('adminName').textContent = user.nama;
+        
+        // Set min date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('tanggal').min = today;
+        document.getElementById('tanggal').value = today;
+        
+        // Load current settings
+        async function loadCurrentSettings() {
+            try {
+                const settings = await getAbsensiSettings();
+                const currentSettingsDiv = document.getElementById('currentSettings');
+                const statusLabel = document.getElementById('absensiStatusLabel');
+                
+                if (!settings) {
+                    currentSettingsDiv.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-cog"></i>
+                            <h4>Belum ada pengaturan absensi</h4>
+                            <p>Atur jadwal absensi untuk memulai</p>
+                        </div>
+                    `;
+                    statusLabel.textContent = 'Tidak Aktif';
+                    statusLabel.className = 'status-badge status-alpa';
+                    return;
+                }
+                
+                // Check if absensi is active
+                const now = new Date();
+                const currentDate = now.toISOString().split('T')[0];
+                const currentTime = now.getHours() * 60 + now.getMinutes();
+                const openTime = timeToMinutes(settings.jam_buka);
+                const closeTime = timeToMinutes(settings.jam_tutup);
+                
+                let statusText = 'Tidak Aktif';
+                let statusClass = 'status-alpa';
+                
+                if (settings.tanggal === currentDate) {
+                    if (currentTime >= openTime && currentTime <= closeTime) {
+                        statusText = 'Aktif';
+                        statusClass = 'status-hadir';
+                    } else if (currentTime < openTime) {
+                        statusText = 'Menunggu';
+                        statusClass = 'status-izin';
+                    } else {
+                        statusText = 'Selesai';
+                        statusClass = 'status-sakit';
+                    }
+                }
+                
+                statusLabel.textContent = statusText;
+                statusLabel.className = `status-badge ${statusClass}`;
+                
+                // Display current settings
+                currentSettingsDiv.innerHTML = `
+                    <div class="settings-detail">
+                        <h3>${settings.nama_kegiatan}</h3>
+                        <div class="settings-info">
+                            <div class="info-item">
+                                <i class="fas fa-calendar"></i>
+                                <div>
+                                    <strong>Tanggal</strong>
+                                    <p>${formatDate(settings.tanggal)}</p>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-clock"></i>
+                                <div>
+                                    <strong>Waktu</strong>
+                                    <p>${settings.jam_buka} - ${settings.jam_tutup}</p>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-history"></i>
+                                <div>
+                                    <strong>Terakhir Diperbarui</strong>
+                                    <p>${formatDateTime(settings.updatedAt)}</p>
+                                </div>
+                            </div>
+                        </div>
+                        ${settings.catatan ? `
+                            <div class="settings-note">
+                                <i class="fas fa-sticky-note"></i>
+                                <p>${settings.catatan}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                // Fill form with current settings
+                document.getElementById('namaKegiatan').value = settings.nama_kegiatan || '';
+                document.getElementById('tanggal').value = settings.tanggal || today;
+                document.getElementById('jamBuka').value = settings.jam_buka || '08:00';
+                document.getElementById('jamTutup').value = settings.jam_tutup || '17:00';
+                document.getElementById('catatan').value = settings.catatan || '';
+                
+            } catch (error) {
+                console.error("Error loading settings:", error);
+                const currentSettingsDiv = document.getElementById('currentSettings');
+                currentSettingsDiv.innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <h4>Gagal memuat pengaturan</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+        
+        function formatDateTime(timestamp) {
+            if (!timestamp) return '-';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleString('id-ID', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // Form submission
+        document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            try {
+                // Validate time
+                const jamBuka = document.getElementById('jamBuka').value;
+                const jamTutup = document.getElementById('jamTutup').value;
+                
+                if (jamBuka >= jamTutup) {
+                    throw new Error("Waktu selesai harus setelah waktu mulai");
+                }
+                
+                // Prepare settings data
+                const settings = {
+                    nama_kegiatan: document.getElementById('namaKegiatan').value.trim(),
+                    tanggal: document.getElementById('tanggal').value,
+                    jam_buka: jamBuka,
+                    jam_tutup: jamTutup,
+                    catatan: document.getElementById('catatan').value.trim()
+                };
+                
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+                
+                // Save settings
+                const result = await saveAbsensiSettings(settings);
+                
+                // Show success message
+                showNotification('success', result.message);
+                
+                // Reload settings
+                await loadCurrentSettings();
+                await loadSettingsHistory();
+                
+            } catch (error) {
+                showNotification('error', error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+        
+        function resetForm() {
+            document.getElementById('settingsForm').reset();
+            document.getElementById('tanggal').value = today;
+            document.getElementById('jamBuka').value = '08:00';
+            document.getElementById('jamTutup').value = '17:00';
+        }
+        
+        // Load settings history
+        async function loadSettingsHistory() {
+            try {
+                // Note: In a real app, you would have a separate collection for settings history
+                // For now, we'll just show the current settings
+                const settings = await getAbsensiSettings();
+                const tbody = document.getElementById('settingsHistoryBody');
+                
+                if (!settings) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>Belum ada riwayat pengaturan</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tbody.innerHTML = `
+                    <tr>
+                        <td>${settings.nama_kegiatan}</td>
+                        <td>${settings.tanggal}</td>
+                        <td>${settings.jam_buka} - ${settings.jam_tutup}</td>
+                        <td>${formatDateTime(settings.updatedAt)}</td>
+                        <td><span class="status-badge status-hadir">Aktif</span></td>
+                    </tr>
+                `;
+                
+            } catch (error) {
+                console.error("Error loading settings history:", error);
+            }
+        }
+        
+        function showNotification(type, message) {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
+                <span>${message}</span>
+            `;
+            
+            document.querySelector('.main-content').prepend(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+        
+        function logout() {
+            logoutUser();
+        }
+        
+        // Initialize
+        loadCurrentSettings();
+        loadSettingsHistory();
+    </script>
+    
+    <style>
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .settings-detail {
+            padding: 20px;
+        }
+        
+        .settings-detail h3 {
+            margin-bottom: 20px;
+            color: var(--secondary-color);
+            font-size: 1.3rem;
+        }
+        
+        .settings-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+        
+        .info-item i {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-top: 3px;
+        }
+        
+        .info-item strong {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .info-item p {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        .settings-note {
+            padding: 15px;
+            background: var(--bg-color);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        
+        .settings-note i {
+            color: var(--accent-color);
+            font-size: 1.1rem;
+            margin-top: 2px;
+        }
+        
+        .settings-note p {
+            margin: 0;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state, .error-state {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .empty-state i, .error-state i {
+            font-size: 3rem;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .empty-state h4, .error-state h4 {
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state p, .error-state p {
+            color: var(--text-secondary);
+        }
+        
+        input[type="date"], input[type="time"] {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah Akun - Admin FOKSI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="fas fa-clipboard-check"></i>
+                    <h2>Admin FOKSI</h2>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">A</div>
+                    <div class="user-details">
+                        <h3 id="adminName">Admin Name</h3>
+                        <p id="adminRole">Administrator</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="admin-dashboard.html" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="tambah-akun.html" class="nav-item active">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Tambah Akun</span>
+                </a>
+                <a href="pengaturan-absensi.html" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Pengaturan Absensi</span>
+                </a>
+                <a href="data-absensi.html" class="nav-item">
+                    <i class="fas fa-database"></i>
+                    <span>Data Absensi</span>
+                </a>
+            </div>
+            
+            <div class="logout-btn">
+                <a href="#" onclick="logout()" class="nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="header">
+                <h1>Tambah Akun Anggota</h1>
+                <button class="btn-secondary" onclick="window.location.href='admin-dashboard.html'">
+                    <i class="fas fa-arrow-left"></i>
+                    Kembali
+                </button>
+            </header>
+
+            <!-- Success Message -->
+            <div id="successAlert" class="alert alert-success" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <span id="successMessage"></span>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorAlert" class="alert alert-danger" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorMessage"></span>
+            </div>
+
+            <!-- Form Tambah Akun -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Data Anggota Baru</h2>
+                    <button class="btn-secondary" onclick="resetForm()">
+                        <i class="fas fa-redo"></i>
+                        Reset Form
+                    </button>
+                </div>
+                
+                <form id="tambahAkunForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nama Lengkap <span class="required">*</span></label>
+                            <input type="text" id="nama" class="form-control" required 
+                                   placeholder="Masukkan nama lengkap">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Username <span class="required">*</span></label>
+                            <input type="text" id="username" class="form-control" required 
+                                   placeholder="Contoh: johndoe" onblur="checkUsername()">
+                            <div class="form-hint">Username akan digunakan untuk login</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Password <span class="required">*</span></label>
+                            <input type="password" id="password" class="form-control" required 
+                                   placeholder="Minimal 6 karakter">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Konfirmasi Password <span class="required">*</span></label>
+                            <input type="password" id="confirmPassword" class="form-control" required 
+                                   placeholder="Ulangi password">
+                        </div>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Jabatan <span class="required">*</span></label>
+                            <select id="jabatan" class="form-control" required>
+                                <option value="">Pilih Jabatan</option>
+                                <option value="Ketua">Ketua</option>
+                                <option value="Wakil Ketua">Wakil Ketua</option>
+                                <option value="Sekretaris">Sekretaris</option>
+                                <option value="Bendahara">Bendahara</option>
+                                <option value="Anggota">Anggota</option>
+                                <option value="Koordinator">Koordinator</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Regional <span class="required">*</span></label>
+                            <select id="regional" class="form-control" required>
+                                <option value="">Pilih Regional</option>
+                                <option value="Jakarta">Jakarta</option>
+                                <option value="Jawa Barat">Jawa Barat</option>
+                                <option value="Jawa Tengah">Jawa Tengah</option>
+                                <option value="Jawa Timur">Jawa Timur</option>
+                                <option value="Sumatera">Sumatera</option>
+                                <option value="Kalimantan">Kalimantan</option>
+                                <option value="Sulawesi">Sulawesi</option>
+                                <option value="Bali & Nusa Tenggara">Bali & Nusa Tenggara</option>
+                                <option value="Papua & Maluku">Papua & Maluku</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Sekolah/Instansi <span class="required">*</span></label>
+                        <input type="text" id="sekolah" class="form-control" required 
+                               placeholder="Nama sekolah atau instansi">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Catatan (Opsional)</label>
+                        <textarea id="catatan" class="form-control" rows="3" 
+                                  placeholder="Tambahkan catatan jika diperlukan..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary" id="submitBtn">
+                            <i class="fas fa-user-plus"></i>
+                            Tambah Anggota
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="window.history.back()">
+                            <i class="fas fa-times"></i>
+                            Batal
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Daftar Anggota -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Daftar Anggota</h2>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchMember" placeholder="Cari anggota..." 
+                               onkeyup="searchMembers()">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="membersTable">
+                        <thead>
+                            <tr>
+                                <th>Nama</th>
+                                <th>Username</th>
+                                <th>Jabatan</th>
+                                <th>Regional</th>
+                                <th>Sekolah</th>
+                                <th>Tanggal Daftar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="membersTableBody">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module">
+        import { checkAuth, logoutUser, registerUser, checkUsernameExists } from './auth.js';
+        import { db } from './firebase-config.js';
+        import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+        
+        // Check authentication
+        const user = checkAuth();
+        if (!user || user.role !== 'admin') {
+            window.location.href = 'index.html';
+        }
+        
+        // Set admin name
+        document.getElementById('adminName').textContent = user.nama;
+        
+        // Load members list
+        async function loadMembers() {
+            try {
+                const usersRef = collection(db, "users");
+                const q = query(usersRef, orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                const tbody = document.getElementById('membersTableBody');
+                tbody.innerHTML = '';
+                
+                querySnapshot.forEach((doc) => {
+                    const member = doc.data();
+                    if (member.role === 'anggota') {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${member.nama}</td>
+                            <td>${member.username}</td>
+                            <td>${member.jabatan}</td>
+                            <td>${member.regional}</td>
+                            <td>${member.sekolah}</td>
+                            <td>${formatDate(member.createdAt)}</td>
+                        `;
+                        tbody.appendChild(row);
+                    }
+                });
+                
+            } catch (error) {
+                console.error("Error loading members:", error);
+            }
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID');
+        }
+        
+        // Check username availability
+        async function checkUsername() {
+            const usernameInput = document.getElementById('username');
+            const username = usernameInput.value.trim();
+            
+            if (username.length < 3) {
+                showInputError(usernameInput, 'Username minimal 3 karakter');
+                return;
+            }
+            
+            try {
+                const exists = await checkUsernameExists(username);
+                if (exists) {
+                    showInputError(usernameInput, 'Username sudah digunakan');
+                } else {
+                    clearInputError(usernameInput);
+                    showInputSuccess(usernameInput, 'Username tersedia');
+                }
+            } catch (error) {
+                console.error("Error checking username:", error);
+            }
+        }
+        
+        function showInputError(input, message) {
+            input.style.borderColor = 'var(--danger-color)';
+            const hint = input.nextElementSibling;
+            if (hint && hint.classList.contains('form-hint')) {
+                hint.style.color = 'var(--danger-color)';
+                hint.textContent = message;
+            }
+        }
+        
+        function showInputSuccess(input, message) {
+            input.style.borderColor = 'var(--success-color)';
+            const hint = input.nextElementSibling;
+            if (hint && hint.classList.contains('form-hint')) {
+                hint.style.color = 'var(--success-color)';
+                hint.textContent = message;
+            }
+        }
+        
+        function clearInputError(input) {
+            input.style.borderColor = '';
+            const hint = input.nextElementSibling;
+            if (hint && hint.classList.contains('form-hint')) {
+                hint.style.color = 'var(--text-secondary)';
+                hint.textContent = 'Username akan digunakan untuk login';
+            }
+        }
+        
+        // Form submission
+        document.getElementById('tambahAkunForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            try {
+                // Validate passwords
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                
+                if (password.length < 6) {
+                    throw new Error("Password minimal 6 karakter");
+                }
+                
+                if (password !== confirmPassword) {
+                    throw new Error("Password tidak cocok");
+                }
+                
+                // Prepare user data
+                const userData = {
+                    nama: document.getElementById('nama').value.trim(),
+                    username: document.getElementById('username').value.trim(),
+                    password: password,
+                    jabatan: document.getElementById('jabatan').value,
+                    regional: document.getElementById('regional').value,
+                    sekolah: document.getElementById('sekolah').value.trim()
+                };
+                
+                // Validate all fields
+                for (const [key, value] of Object.entries(userData)) {
+                    if (!value && key !== 'catatan') {
+                        throw new Error(`Field ${key} harus diisi`);
+                    }
+                }
+                
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menambahkan...';
+                
+                // Register user
+                const result = await registerUser(userData);
+                
+                // Show success message
+                showAlert('success', result.message);
+                
+                // Reset form
+                resetForm();
+                
+                // Reload members list
+                await loadMembers();
+                
+            } catch (error) {
+                showAlert('error', error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+        
+        function showAlert(type, message) {
+            if (type === 'success') {
+                const alert = document.getElementById('successAlert');
+                document.getElementById('successMessage').textContent = message;
+                alert.style.display = 'flex';
+                
+                // Hide after 5 seconds
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 5000);
+            } else {
+                const alert = document.getElementById('errorAlert');
+                document.getElementById('errorMessage').textContent = message;
+                alert.style.display = 'flex';
+            }
+        }
+        
+        function resetForm() {
+            document.getElementById('tambahAkunForm').reset();
+            document.querySelectorAll('.form-control').forEach(input => {
+                input.style.borderColor = '';
+            });
+        }
+        
+        function searchMembers() {
+            const searchTerm = document.getElementById('searchMember').value.toLowerCase();
+            const rows = document.querySelectorAll('#membersTableBody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+        
+        function logout() {
+            logoutUser();
+        }
+        
+        // Initialize
+        loadMembers();
+    </script>
+    
+    <style>
+        .form-hint {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+        
+        .search-box {
+            position: relative;
+            width: 250px;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 10px 10px 10px 35px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 12px;
+            padding-right: 40px;
+        }
+    </style>
+</body>
+</html>

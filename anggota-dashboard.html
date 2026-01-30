@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Anggota - FOKSI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="fas fa-clipboard-check"></i>
+                    <h2>Anggota FOKSI</h2>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div class="user-details">
+                        <h3 id="userName">Nama Anggota</h3>
+                        <p id="userJabatan">Jabatan</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="anggota-dashboard.html" class="nav-item active">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="form-absensi.html" class="nav-item">
+                    <i class="fas fa-edit"></i>
+                    <span>Isi Absensi</span>
+                </a>
+                <a href="#" onclick="lihatRiwayat()" class="nav-item">
+                    <i class="fas fa-history"></i>
+                    <span>Riwayat</span>
+                </a>
+            </div>
+            
+            <div class="logout-btn">
+                <a href="#" onclick="logout()" class="nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="header">
+                <h1>Dashboard Anggota</h1>
+                <div class="header-actions">
+                    <span id="currentDateTime"></span>
+                </div>
+            </header>
+
+            <!-- Status Absensi -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <i class="fas fa-user"></i>
+                        <span class="stat-label">Profil</span>
+                    </div>
+                    <div class="user-profile-info">
+                        <p><strong>Nama:</strong> <span id="profileName">-</span></p>
+                        <p><strong>Jabatan:</strong> <span id="profileJabatan">-</span></p>
+                        <p><strong>Regional:</strong> <span id="profileRegional">-</span></p>
+                        <p><strong>Sekolah:</strong> <span id="profileSekolah">-</span></p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <i class="fas fa-calendar-check"></i>
+                        <span class="stat-label">Status Hari Ini</span>
+                    </div>
+                    <div class="stat-value" id="statusHariIni">-</div>
+                    <div id="statusTime"></div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <i class="fas fa-door-open"></i>
+                        <span class="stat-label">Status Absensi</span>
+                    </div>
+                    <div class="stat-value" id="absensiStatus">-</div>
+                    <div id="absensiTimeRange"></div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="stat-label">Kehadiran Bulan Ini</span>
+                    </div>
+                    <div class="stat-value" id="kehadiranBulanIni">0/0</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Absensi Hari Ini</h2>
+                </div>
+                <div class="absensi-info" id="absensiInfo">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Memuat informasi absensi...</span>
+                    </div>
+                </div>
+                <div class="action-center">
+                    <button id="absensiBtn" class="btn-primary" onclick="isiAbsensi()" disabled>
+                        <i class="fas fa-edit"></i>
+                        Isi Absensi
+                    </button>
+                </div>
+            </div>
+
+            <!-- Riwayat Terbaru -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Riwayat Absensi</h2>
+                    <button class="btn-secondary" onclick="lihatRiwayatLengkap()">
+                        <i class="fas fa-list"></i>
+                        Lihat Semua
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Kegiatan</th>
+                                <th>Status</th>
+                                <th>Waktu</th>
+                            </tr>
+                        </thead>
+                        <tbody id="riwayatTable">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Riwayat Modal -->
+    <div id="riwayatModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Riwayat Absensi</h3>
+                <button class="modal-close" onclick="closeRiwayatModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="riwayatContent">
+                    <!-- Riwayat akan diisi oleh JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module">
+        import { checkAuth, logoutUser } from './auth.js';
+        import { checkAbsensiStatus, getUserAbsensiHistory } from './database.js';
+        import { db } from './firebase-config.js';
+        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+        
+        // Check authentication
+        const user = checkAuth();
+        if (!user || user.role !== 'anggota') {
+            window.location.href = 'index.html';
+        }
+        
+        // Initialize user data
+        document.getElementById('userName').textContent = user.nama;
+        document.getElementById('userJabatan').textContent = user.jabatan;
+        document.getElementById('userAvatar').textContent = user.nama.charAt(0);
+        
+        // Update profile info
+        document.getElementById('profileName').textContent = user.nama;
+        document.getElementById('profileJabatan').textContent = user.jabatan;
+        document.getElementById('profileRegional').textContent = user.regional;
+        document.getElementById('profileSekolah').textContent = user.sekolah;
+        
+        // Update date time
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            document.getElementById('currentDateTime').textContent = 
+                now.toLocaleDateString('id-ID', options);
+        }
+        
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+        
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Check absensi status
+                const absensiStatus = await checkAbsensiStatus();
+                const absensiBtn = document.getElementById('absensiBtn');
+                const absensiInfo = document.getElementById('absensiInfo');
+                
+                if (absensiStatus.isOpen) {
+                    document.getElementById('absensiStatus').textContent = 'Dibuka';
+                    document.getElementById('absensiStatus').style.color = 'var(--success-color)';
+                    document.getElementById('absensiTimeRange').textContent = 
+                        `${absensiStatus.settings.jam_buka} - ${absensiStatus.settings.jam_tutup}`;
+                    
+                    absensiInfo.innerHTML = `
+                        <div class="absensi-detail">
+                            <h3>${absensiStatus.settings.nama_kegiatan}</h3>
+                            <p><i class="fas fa-calendar"></i> ${formatDate(absensiStatus.settings.tanggal)}</p>
+                            <p><i class="fas fa-clock"></i> ${absensiStatus.settings.jam_buka} - ${absensiStatus.settings.jam_tutup}</p>
+                            <p class="status-active"><i class="fas fa-check-circle"></i> Absensi sedang dibuka</p>
+                        </div>
+                    `;
+                    
+                    absensiBtn.disabled = false;
+                    absensiBtn.innerHTML = '<i class="fas fa-edit"></i> Isi Absensi';
+                    
+                    // Check if already submitted today
+                    const today = new Date().toISOString().split('T')[0];
+                    const absensiQuery = query(
+                        collection(db, "absensi"),
+                        where("userId", "==", user.uid),
+                        where("tanggal", "==", today)
+                    );
+                    
+                    const existingAbsensi = await getDocs(absensiQuery);
+                    if (!existingAbsensi.empty) {
+                        const absensiData = existingAbsensi.docs[0].data();
+                        document.getElementById('statusHariIni').textContent = 
+                            getStatusText(absensiData.status);
+                        document.getElementById('statusHariIni').className = 
+                            `status-${absensiData.status.toLowerCase()}`;
+                        document.getElementById('statusTime').textContent = 
+                            `Waktu: ${absensiData.waktu}`;
+                        
+                        absensiBtn.disabled = true;
+                        absensiBtn.innerHTML = '<i class="fas fa-check"></i> Sudah Absen';
+                    } else {
+                        document.getElementById('statusHariIni').textContent = 'Belum Absen';
+                        document.getElementById('statusHariIni').className = 'status-pending';
+                        document.getElementById('statusTime').textContent = '';
+                    }
+                } else {
+                    document.getElementById('absensiStatus').textContent = 'Ditutup';
+                    document.getElementById('absensiStatus').style.color = 'var(--danger-color)';
+                    document.getElementById('absensiTimeRange').textContent = '';
+                    
+                    absensiInfo.innerHTML = `
+                        <div class="absensi-detail">
+                            <h3>Absensi Ditutup</h3>
+                            <p><i class="fas fa-info-circle"></i> ${absensiStatus.message}</p>
+                        </div>
+                    `;
+                    
+                    absensiBtn.disabled = true;
+                    absensiBtn.innerHTML = '<i class="fas fa-lock"></i> Absensi Ditutup';
+                    
+                    // Check today's status
+                    const today = new Date().toISOString().split('T')[0];
+                    const absensiQuery = query(
+                        collection(db, "absensi"),
+                        where("userId", "==", user.uid),
+                        where("tanggal", "==", today)
+                    );
+                    
+                    const existingAbsensi = await getDocs(absensiQuery);
+                    if (!existingAbsensi.empty) {
+                        const absensiData = existingAbsensi.docs[0].data();
+                        document.getElementById('statusHariIni').textContent = 
+                            getStatusText(absensiData.status);
+                        document.getElementById('statusHariIni').className = 
+                            `status-${absensiData.status.toLowerCase()}`;
+                        document.getElementById('statusTime').textContent = 
+                            `Waktu: ${absensiData.waktu}`;
+                    } else {
+                        document.getElementById('statusHariIni').textContent = 'Alpa';
+                        document.getElementById('statusHariIni').className = 'status-alpa';
+                        document.getElementById('statusTime').textContent = 'Tidak mengisi absensi';
+                    }
+                }
+                
+                // Load attendance history
+                await loadRiwayatAbsensi();
+                
+                // Calculate monthly attendance
+                await calculateMonthlyAttendance();
+                
+            } catch (error) {
+                console.error("Error loading dashboard data:", error);
+            }
+        }
+        
+        function getStatusText(status) {
+            const statusMap = {
+                'H': 'Hadir',
+                'I': 'Izin',
+                'S': 'Sakit',
+                'A': 'Alpa'
+            };
+            return statusMap[status] || status;
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+        
+        async function loadRiwayatAbsensi() {
+            try {
+                const history = await getUserAbsensiHistory(user.uid);
+                const tableBody = document.getElementById('riwayatTable');
+                tableBody.innerHTML = '';
+                
+                // Take only last 5 records
+                const recentHistory = history.slice(0, 5);
+                
+                if (recentHistory.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>Belum ada riwayat absensi</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                recentHistory.forEach(record => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${record.tanggal}</td>
+                        <td>${record.kegiatan || '-'}</td>
+                        <td><span class="status-badge status-${record.status.toLowerCase()}">${getStatusText(record.status)}</span></td>
+                        <td>${record.waktu || '-'}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error("Error loading history:", error);
+            }
+        }
+        
+        async function calculateMonthlyAttendance() {
+            try {
+                const now = new Date();
+                const currentMonth = now.getMonth() + 1;
+                const currentYear = now.getFullYear();
+                
+                const startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`;
+                const endDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-31`;
+                
+                // Get all absensi this month
+                const absensiQuery = query(
+                    collection(db, "absensi"),
+                    where("userId", "==", user.uid),
+                    where("tanggal", ">=", startDate),
+                    where("tanggal", "<=", endDate)
+                );
+                
+                const absensiSnapshot = await getDocs(absensiQuery);
+                
+                // Count present days (H)
+                let hadirCount = 0;
+                let totalDays = 0;
+                
+                absensiSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.status === 'H') {
+                        hadirCount++;
+                    }
+                    totalDays++;
+                });
+                
+                // Update UI
+                document.getElementById('kehadiranBulanIni').textContent = 
+                    `${hadirCount}/${totalDays}`;
+                
+                // Update progress bar
+                const percentage = totalDays > 0 ? (hadirCount / totalDays) * 100 : 0;
+                document.getElementById('progressFill').style.width = `${percentage}%`;
+                
+            } catch (error) {
+                console.error("Error calculating monthly attendance:", error);
+            }
+        }
+        
+        function isiAbsensi() {
+            window.location.href = 'form-absensi.html';
+        }
+        
+        function lihatRiwayat() {
+            document.getElementById('riwayatModal').classList.add('active');
+            loadFullRiwayat();
+        }
+        
+        function lihatRiwayatLengkap() {
+            lihatRiwayat();
+        }
+        
+        async function loadFullRiwayat() {
+            try {
+                const history = await getUserAbsensiHistory(user.uid);
+                const riwayatContent = document.getElementById('riwayatContent');
+                
+                if (history.length === 0) {
+                    riwayatContent.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <h4>Belum ada riwayat absensi</h4>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = `
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Kegiatan</th>
+                                    <th>Status</th>
+                                    <th>Waktu</th>
+                                    <th>Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                history.forEach(record => {
+                    html += `
+                        <tr>
+                            <td>${record.tanggal}</td>
+                            <td>${record.kegiatan || '-'}</td>
+                            <td><span class="status-badge status-${record.status.toLowerCase()}">${getStatusText(record.status)}</span></td>
+                            <td>${record.waktu || '-'}</td>
+                            <td>${record.keterangan || '-'}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                riwayatContent.innerHTML = html;
+                
+            } catch (error) {
+                console.error("Error loading full history:", error);
+                riwayatContent.innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <h4>Gagal memuat riwayat</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function closeRiwayatModal() {
+            document.getElementById('riwayatModal').classList.remove('active');
+        }
+        
+        function logout() {
+            logoutUser();
+        }
+        
+        // Initialize
+        loadDashboardData();
+    </script>
+    
+    <style>
+        .user-profile-info {
+            margin-top: 15px;
+        }
+        
+        .user-profile-info p {
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .user-profile-info strong {
+            color: var(--text-secondary);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+            border-radius: 4px;
+            width: 0%;
+            transition: width 1s ease;
+        }
+        
+        .absensi-info {
+            margin-bottom: 25px;
+        }
+        
+        .absensi-detail {
+            padding: 20px;
+            background: var(--bg-color);
+            border-radius: var(--radius);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .absensi-detail h3 {
+            margin-bottom: 10px;
+            color: var(--secondary-color);
+        }
+        
+        .absensi-detail p {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+        }
+        
+        .status-active {
+            color: var(--success-color) !important;
+            font-weight: 600;
+        }
+        
+        .action-center {
+            text-align: center;
+        }
+        
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state, .error-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state i, .error-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .status-pending {
+            color: var(--warning-color);
+            font-weight: 600;
+        }
+    </style>
+</body>
+</html>
