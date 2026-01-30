@@ -23,12 +23,12 @@
             <form id="loginForm" class="login-form">
                 <div class="input-group">
                     <i class="fas fa-user"></i>
-                    <input type="text" id="username" placeholder="Username" required>
+                    <input type="text" id="username" placeholder="Username" required autocomplete="username">
                 </div>
                 
                 <div class="input-group">
                     <i class="fas fa-lock"></i>
-                    <input type="password" id="password" placeholder="Password" required>
+                    <input type="password" id="password" placeholder="Password" required autocomplete="current-password">
                     <button type="button" class="show-password" onclick="togglePassword()">
                         <i class="fas fa-eye"></i>
                     </button>
@@ -54,20 +54,15 @@
                 
                 <div class="login-footer">
                     <p>© 2024 FOKSI | Sistem Absensi Online</p>
-                    <!-- Link tambahan untuk setup awal -->
-                    <p style="margin-top: 10px; font-size: 0.8rem;">
-                        <a href="setup-admin.html" style="color: var(--primary-color);">Buat Akun Admin Pertama</a>
-                    </p>
+                    <p style="margin-top: 10px;"><a href="setup-admin.html" style="color: #4361ee; font-size: 0.8rem;">Belum punya akun? Klik Setup</a></p>
                 </div>
             </form>
             
-            <div id="errorMessage" class="error-message"></div>
+            <div id="errorMessage" class="error-message" style="display: none; color: #e63946; background: #fdf0f0; padding: 10px; border-radius: 5px; margin-top: 15px; font-size: 0.9rem; text-align: center;"></div>
         </div>
     </div>
 
-    <script type="module" src="firebase-config.js"></script>
-    
-    <!-- Script Utama Login -->
+    <!-- Firebase Config & Login Logic -->
     <script type="module">
         import { loginUser } from './auth.js';
 
@@ -78,13 +73,10 @@
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Reset error
+            // UI Reset
             errorMessageDiv.style.display = 'none';
-            errorMessageDiv.textContent = '';
-            
-            // Loading state
-            const originalBtnText = loginBtn.innerHTML;
             loginBtn.disabled = true;
+            const originalText = loginBtn.innerHTML;
             loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
 
             const username = document.getElementById('username').value.trim();
@@ -92,25 +84,26 @@
             const role = document.querySelector('input[name="role"]:checked').value;
 
             try {
+                // PENTING: Fungsi ini ada di auth.js
                 await loginUser(username, password, role);
-                // Jika sukses, auth.js akan mengarahkan halaman (redirect)
+                // Jika sukses, auth.js akan mengarahkan halaman secara otomatis
             } catch (error) {
-                console.error(error);
+                console.error("Login Error Details:", error);
                 errorMessageDiv.style.display = 'block';
                 
-                // Terjemahkan error umum Firebase
+                // Terjemahan Error
                 let msg = error.message;
-                if(msg.includes('auth/invalid-credential') || msg.includes('auth/user-not-found') || msg.includes('auth/wrong-password')) {
+                if (msg.includes('auth/network-request-failed')) {
+                    msg = "Koneksi internet bermasalah atau domain tidak diizinkan.";
+                } else if (msg.includes('auth/invalid-credential')) {
                     msg = "Username atau password salah.";
-                } else if (msg.includes('Data pengguna tidak ditemukan')) {
-                    msg = "Akun terdaftar di Auth tapi data belum ada di Database. Silakan hubungi developer atau gunakan halaman Setup.";
+                } else if (msg.includes('Role tidak sesuai')) {
+                    msg = "Anda mencoba login sebagai " + role + " tapi akun Anda bukan " + role;
                 }
-
-                errorMessageDiv.textContent = msg;
                 
-                // Reset button
+                errorMessageDiv.textContent = msg;
                 loginBtn.disabled = false;
-                loginBtn.innerHTML = originalBtnText;
+                loginBtn.innerHTML = originalText;
             }
         });
     </script>
