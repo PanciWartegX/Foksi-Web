@@ -12,6 +12,21 @@
             margin: 50px auto;
             padding: 20px;
         }
+        .alert {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
     </style>
 </head>
 <body>
@@ -43,7 +58,8 @@
                     <i class="fas fa-user-shield"></i> Buat Akun Admin
                 </button>
             </form>
-            <div id="message" style="margin-top: 20px; padding: 10px; border-radius: 5px; display: none;"></div>
+            
+            <div id="message" class="alert" style="display: none;"></div>
             
             <div style="margin-top: 20px; text-align: center;">
                 <a href="index.html">Kembali ke Login</a>
@@ -62,7 +78,7 @@
             const msg = document.getElementById('message');
             
             btn.disabled = true;
-            btn.innerHTML = 'Memproses...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
             msg.style.display = 'none';
 
             const username = document.getElementById('username').value.trim();
@@ -70,38 +86,55 @@
             const nama = document.getElementById('nama').value;
             const email = `${username}@foksi.com`;
 
+            console.log("Setup admin attempt:", { username, email });
+
             try {
+                if (password.length < 6) {
+                    throw new Error("Password minimal 6 karakter");
+                }
+
                 // 1. Buat Akun di Authentication
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
 
-                // 2. Buat Data di Firestore (PENTING AGAR BISA LOGIN)
+                console.log("Admin created in Auth, UID:", user.uid);
+
+                // 2. Buat Data di Firestore
                 await setDoc(doc(db, "users", user.uid), {
                     username: username,
                     nama: nama,
                     email: email,
-                    role: 'admin', // Role dikunci ke admin
+                    role: 'admin',
                     jabatan: 'Administrator',
                     regional: 'Pusat',
                     sekolah: '-',
                     createdAt: new Date().toISOString()
                 });
 
+                console.log("Admin data saved to Firestore");
+
                 // Sukses
                 msg.className = 'alert alert-success';
                 msg.style.display = 'block';
-                msg.style.backgroundColor = '#d4edda';
-                msg.style.color = '#155724';
-                msg.innerHTML = `✅ Berhasil! Akun <b>${username}</b> telah dibuat.<br>Silakan kembali ke halaman login.`;
+                msg.innerHTML = `✅ Berhasil! Akun <b>${username}</b> telah dibuat.<br>
+                                Email: ${email}<br>
+                                Role: Admin<br>
+                                <br>Silakan kembali ke halaman login.`;
                 document.getElementById('setupForm').reset();
 
             } catch (error) {
-                console.error(error);
+                console.error("Setup error:", error);
                 msg.className = 'alert alert-danger';
                 msg.style.display = 'block';
-                msg.style.backgroundColor = '#f8d7da';
-                msg.style.color = '#721c24';
-                msg.textContent = "Gagal: " + error.message;
+                
+                let errorMsg = "Gagal: " + error.message;
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMsg = "Username sudah digunakan. Coba username lain.";
+                } else if (error.code === 'auth/weak-password') {
+                    errorMsg = "Password terlalu lemah. Minimal 6 karakter.";
+                }
+                
+                msg.textContent = errorMsg;
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-user-shield"></i> Buat Akun Admin';

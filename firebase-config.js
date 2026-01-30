@@ -4,7 +4,6 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.8.0/firebase
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-// Konfigurasi terbaru dari Firebase Console Anda
 const firebaseConfig = {
   apiKey: "AIzaSyBaEkKJzyohsq6GK5GWygai0q3V0O_MkLY",
   authDomain: "web-foksi-9acb9.firebaseapp.com",
@@ -21,5 +20,5 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Export agar bisa digunakan oleh auth.js, database.js, dll
 export { app, analytics, auth, db };
+export default { app, analytics, auth, db };

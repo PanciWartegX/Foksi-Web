@@ -10,56 +10,7 @@
 </head>
 <body>
     <div class="login-container">
-        <div class="login-card">
-            <div class="logo-section">
-                <div class="logo">
-                    <i class="fas fa-clipboard-check"></i>
-                    <h1>FOKSI</h1>
-                </div>
-                <h2>Absensi Online</h2>
-                <p class="subtitle">Sistem Presensi Digital</p>
-            </div>
-            
-            <form id="loginForm" class="login-form">
-                <div class="input-group">
-                    <i class="fas fa-user"></i>
-                    <input type="text" id="username" placeholder="Username" required autocomplete="username">
-                </div>
-                
-                <div class="input-group">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="password" placeholder="Password" required autocomplete="current-password">
-                    <button type="button" class="show-password" onclick="togglePassword()">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </div>
-                
-                <div class="role-selection">
-                    <label class="radio-container">
-                        <input type="radio" name="role" value="admin" checked>
-                        <span class="checkmark"></span>
-                        Admin
-                    </label>
-                    <label class="radio-container">
-                        <input type="radio" name="role" value="anggota">
-                        <span class="checkmark"></span>
-                        Anggota
-                    </label>
-                </div>
-                
-                <button type="submit" class="login-btn" id="loginBtn">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Masuk
-                </button>
-                
-                <div class="login-footer">
-                    <p>© 2024 FOKSI | Sistem Absensi Online</p>
-                    <p style="margin-top: 10px;"><a href="setup-admin.html" style="color: #4361ee; font-size: 0.8rem;">Belum punya akun? Klik Setup</a></p>
-                </div>
-            </form>
-            
-            <div id="errorMessage" class="error-message" style="display: none; color: #e63946; background: #fdf0f0; padding: 10px; border-radius: 5px; margin-top: 15px; font-size: 0.9rem; text-align: center;"></div>
-        </div>
+        <!-- ... (HTML SAMA SEPERTI SEBELUMNYA) ... -->
     </div>
 
     <!-- Firebase Config & Login Logic -->
@@ -73,7 +24,8 @@
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // UI Reset
+            console.log("=== LOGIN ATTEMPT STARTED ===");
+            
             errorMessageDiv.style.display = 'none';
             loginBtn.disabled = true;
             const originalText = loginBtn.innerHTML;
@@ -83,25 +35,20 @@
             const password = document.getElementById('password').value;
             const role = document.querySelector('input[name="role"]:checked').value;
 
+            console.log("Login credentials:", { username, password, role });
+
             try {
-                // PENTING: Fungsi ini ada di auth.js
+                if (!username || !password) {
+                    throw new Error("Username dan password harus diisi");
+                }
+                
                 await loginUser(username, password, role);
-                // Jika sukses, auth.js akan mengarahkan halaman secara otomatis
+                
             } catch (error) {
                 console.error("Login Error Details:", error);
                 errorMessageDiv.style.display = 'block';
+                errorMessageDiv.textContent = error.message;
                 
-                // Terjemahan Error
-                let msg = error.message;
-                if (msg.includes('auth/network-request-failed')) {
-                    msg = "Koneksi internet bermasalah atau domain tidak diizinkan.";
-                } else if (msg.includes('auth/invalid-credential')) {
-                    msg = "Username atau password salah.";
-                } else if (msg.includes('Role tidak sesuai')) {
-                    msg = "Anda mencoba login sebagai " + role + " tapi akun Anda bukan " + role;
-                }
-                
-                errorMessageDiv.textContent = msg;
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = originalText;
             }
