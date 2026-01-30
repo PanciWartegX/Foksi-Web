@@ -1,9 +1,9 @@
-// auth.js - FIXED VERSION WITH @gmail.com
+// auth.js - FIXED VERSION WITH @gmail.com - UPDATED 12.8.0
 import { auth, db } from './firebase-config.js';
 import { 
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword 
-} from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { 
     doc, 
     setDoc, 
@@ -12,7 +12,7 @@ import {
     query,
     where,
     getDocs
-} from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
 // Login function
 export async function loginUser(username, password, role) {
