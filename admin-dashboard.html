@@ -153,33 +153,39 @@
             </div>
         </main>
     </div>
+
     <script type="module" src="firebase-config.js"></script>
     <script type="module">
-        import { checkAuth, logoutUser } from './auth.js';
-        import { db } from './firebase-config.js';
-        import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+    import { checkAuth, logoutUser } from './auth.js';
+    import { db } from './firebase-config.js';
+    import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        
+        // Global variables
+        let currentUser = null;
         
         // Check authentication
         document.addEventListener('DOMContentLoaded', async () => {
             try {
-                const user = checkAuth();
-                console.log("Admin Dashboard - User from checkAuth:", user);
+                console.log("Admin Dashboard - Loading...");
                 
-                if (!user) {
-                    console.log("No user, redirecting to login");
+                currentUser = checkAuth();
+                console.log("User from checkAuth:", currentUser);
+                
+                if (!currentUser) {
+                    console.log("No user found, redirecting to login");
                     window.location.href = 'index.html';
                     return;
                 }
                 
-                if (user.role !== 'admin') {
-                    console.log("Not admin, redirecting to member dashboard");
+                if (currentUser.role !== 'admin') {
+                    console.log("User is not admin, redirecting to member dashboard");
                     window.location.href = 'anggota-dashboard.html';
                     return;
                 }
                 
                 // Set user info
-                document.getElementById('adminName').textContent = user.nama || 'Admin';
-                document.getElementById('adminRole').textContent = user.role;
+                document.getElementById('adminName').textContent = currentUser.nama || 'Admin';
+                document.getElementById('adminRole').textContent = currentUser.role;
                 
                 // Update date time
                 updateDateTime();
@@ -208,7 +214,203 @@
             document.getElementById('currentDateTime').textContent = dateTimeStr;
         }
         
-        // ... (FUNGSI LAINNYA TETAP SAMA) ...
+        // Load data
+        async function loadDashboardData() {
+            try {
+                console.log("Loading dashboard data...");
+                
+                // Load total anggota
+                const usersSnapshot = await getDocs(collection(db, "users"));
+                let totalAnggota = 0;
+                usersSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.role === 'anggota') {
+                        totalAnggota++;
+                    }
+                });
+                
+                console.log("Total anggota:", totalAnggota);
+                document.getElementById('totalAnggota').textContent = totalAnggota;
+                
+                // Load settings
+                const settingsDoc = await getDoc(doc(db, "settings", "absensi"));
+                if (settingsDoc.exists()) {
+                    const settings = settingsDoc.data();
+                    console.log("Settings loaded:", settings);
+                    
+                    document.getElementById('namaKegiatan').textContent = settings.nama_kegiatan || '-';
+                    
+                    // Check absensi status
+                    const isOpen = checkAbsensiStatus(settings);
+                    document.getElementById('statusAbsensi').textContent = isOpen ? 'Aktif' : 'Mati';
+                    document.getElementById('statusAbsensi').style.color = isOpen ? 'var(--success-color)' : 'var(--danger-color)';
+                } else {
+                    console.log("No settings found");
+                    document.getElementById('namaKegiatan').textContent = '-';
+                    document.getElementById('statusAbsensi').textContent = 'Mati';
+                    document.getElementById('statusAbsensi').style.color = 'var(--danger-color)';
+                }
+                
+                // Load recent absensi
+                await loadRecentAbsensi();
+                
+            } catch (error) {
+                console.error("Error loading dashboard data:", error);
+                showError("Gagal memuat data: " + error.message);
+            }
+        }
+        
+        function checkAbsensiStatus(settings) {
+            if (!settings) return false;
+            
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            if (settings.tanggal !== today) return false;
+            
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            const openTime = timeToMinutes(settings.jam_buka);
+            const closeTime = timeToMinutes(settings.jam_tutup);
+            
+            return currentTime >= openTime && currentTime <= closeTime;
+        }
+        
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+        
+        async function loadRecentAbsensi() {
+            try {
+                console.log("Loading recent absensi...");
+                const absensiSnapshot = await getDocs(collection(db, "absensi"));
+                const tbody = document.getElementById('absensiTableBody');
+                tbody.innerHTML = '';
+                
+                // Sort by timestamp descending and take latest 10
+                const absensiList = [];
+                absensiSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    absensiList.push({ 
+                        id: doc.id, 
+                        ...data,
+                        timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : data.timestamp
+                    });
+                });
+                
+                // Sort by timestamp descending
+                absensiList.sort((a, b) => {
+                    const dateA = new Date(a.timestamp || 0);
+                    const dateB = new Date(b.timestamp || 0);
+                    return dateB - dateA;
+                });
+                
+                const recentAbsensi = absensiList.slice(0, 10);
+                
+                if (recentAbsensi.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>Belum ada data absensi</p>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    recentAbsensi.forEach(record => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${record.nama || '-'}</td>
+                            <td>${record.jabatan || '-'}</td>
+                            <td>${record.regional || '-'}</td>
+                            <td><span class="status-badge status-${record.status?.toLowerCase() || 'alpa'}">${getStatusText(record.status)}</span></td>
+                            <td>${formatTime(record.timestamp)}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+                
+                // Update hadir hari ini count
+                const today = new Date().toISOString().split('T')[0];
+                let hadirHariIni = 0;
+                absensiList.forEach(record => {
+                    if (record.tanggal === today && record.status === 'H') {
+                        hadirHariIni++;
+                    }
+                });
+                
+                console.log("Hadir hari ini:", hadirHariIni);
+                document.getElementById('hadirHariIni').textContent = hadirHariIni;
+                
+            } catch (error) {
+                console.error("Error loading recent absensi:", error);
+                const tbody = document.getElementById('absensiTableBody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="error-state">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <p>Gagal memuat data absensi</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+        
+        function getStatusText(status) {
+            const statusMap = {
+                'H': 'Hadir',
+                'I': 'Izin',
+                'S': 'Sakit',
+                'A': 'Alpa'
+            };
+            return statusMap[status] || status || '-';
+        }
+        
+        function formatTime(timestamp) {
+            if (!timestamp) return '-';
+            try {
+                const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+                return date.toLocaleTimeString('id-ID', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false
+                });
+            } catch (error) {
+                return '-';
+            }
+        }
+        
+        function refreshData() {
+            console.log("Refreshing data...");
+            loadDashboardData();
+        }
+        
+        function lihatSemuaAbsensi() {
+            window.location.href = 'data-absensi.html';
+        }
+        
+        function showError(message) {
+            // Create error alert
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger';
+            alertDiv.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            `;
+            
+            // Insert at the top of main content
+            const mainContent = document.querySelector('.main-content');
+            const header = document.querySelector('.header');
+            mainContent.insertBefore(alertDiv, header.nextSibling);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
         
         function logout() {
             logoutUser();
@@ -254,6 +456,31 @@
             color: var(--text-secondary);
             font-size: 0.9rem;
         }
+        
+        .empty-state, .error-state {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state i, .error-state i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .status-hadir { background: #d1fae5; color: #065f46; }
+        .status-izin { background: #fef3c7; color: #92400e; }
+        .status-sakit { background: #dbeafe; color: #1e40af; }
+        .status-alpa { background: #fee2e2; color: #991b1b; }
     </style>
 </body>
 </html>

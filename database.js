@@ -1,4 +1,4 @@
-// database.js
+// database.js - UPDATED VERSION
 import { db } from './firebase-config.js';
 import { 
     collection,
@@ -10,15 +10,19 @@ import {
     where,
     orderBy,
     addDoc,
-    updateDoc,
-    deleteDoc,
     Timestamp
-} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
 // Absensi Functions
 export async function submitAbsensi(absensiData) {
     try {
         const user = JSON.parse(localStorage.getItem('user'));
+        
+        if (!user) {
+            throw new Error("User tidak ditemukan. Silakan login kembali.");
+        }
+        
+        console.log("Submitting absensi for user:", user.uid);
         
         // Check if already submitted today
         const today = new Date().toISOString().split('T')[0];
@@ -40,6 +44,7 @@ export async function submitAbsensi(absensiData) {
         }
         
         const settings = settingsDoc.data();
+        console.log("Absensi settings:", settings);
         
         // Check if absensi is open
         if (!isAbsensiOpen(settings)) {
@@ -61,6 +66,7 @@ export async function submitAbsensi(absensiData) {
             kegiatan: settings.nama_kegiatan
         };
         
+        console.log("Saving absensi record:", absensiRecord);
         await addDoc(collection(db, "absensi"), absensiRecord);
         
         return { success: true, message: "Absensi berhasil disimpan" };
@@ -126,7 +132,7 @@ export async function getAbsensiSettings() {
 // Data Functions
 export async function getAllAbsensi(startDate = null, endDate = null) {
     try {
-        let q = query(collection(db, "absensi"), orderBy("timestamp", "desc"));
+        let q;
         
         if (startDate && endDate) {
             q = query(
@@ -135,15 +141,20 @@ export async function getAllAbsensi(startDate = null, endDate = null) {
                 where("tanggal", "<=", endDate),
                 orderBy("tanggal", "desc")
             );
+        } else {
+            q = query(collection(db, "absensi"), orderBy("timestamp", "desc"));
         }
         
         const querySnapshot = await getDocs(q);
         const absensiList = [];
         
         querySnapshot.forEach((doc) => {
+            const data = doc.data();
             absensiList.push({
                 id: doc.id,
-                ...doc.data()
+                ...data,
+                // Convert timestamp to Date object
+                timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : data.timestamp
             });
         });
         
@@ -179,25 +190,40 @@ export async function getUserAbsensiHistory(userId) {
 export async function checkAbsensiStatus() {
     try {
         const settings = await getAbsensiSettings();
-        if (!settings) return { isOpen: false, message: "Absensi belum diatur" };
+        console.log("Settings loaded:", settings);
+        
+        if (!settings) {
+            return { isOpen: false, message: "Absensi belum diatur" };
+        }
         
         const isOpen = isAbsensiOpen(settings);
+        console.log("Is absensi open?", isOpen);
         
         if (!isOpen) {
             const now = new Date();
             const today = now.toISOString().split('T')[0];
             
             if (settings.tanggal !== today) {
-                return { isOpen: false, message: "Tidak ada absensi hari ini" };
+                return { 
+                    isOpen: false, 
+                    message: `Tidak ada absensi hari ini. Jadwal: ${settings.tanggal}` 
+                };
             }
             
             const currentTime = now.getHours() * 60 + now.getMinutes();
             const openTime = timeToMinutes(settings.jam_buka);
+            const closeTime = timeToMinutes(settings.jam_tutup);
             
             if (currentTime < openTime) {
-                return { isOpen: false, message: "Absensi belum dibuka" };
+                return { 
+                    isOpen: false, 
+                    message: `Absensi akan dibuka pukul ${settings.jam_buka}` 
+                };
             } else {
-                return { isOpen: false, message: "Absensi sudah ditutup" };
+                return { 
+                    isOpen: false, 
+                    message: `Absensi ditutup pukul ${settings.jam_tutup}` 
+                };
             }
         }
         
@@ -208,6 +234,6 @@ export async function checkAbsensiStatus() {
         };
     } catch (error) {
         console.error("Error checking absensi status:", error);
-        throw error;
+        return { isOpen: false, message: "Error: " + error.message };
     }
 }

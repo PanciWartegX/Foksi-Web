@@ -1,9 +1,9 @@
-// auth.js - FIXED VERSION
+// auth.js - FIXED VERSION WITH @gmail.com
 import { auth, db } from './firebase-config.js';
 import { 
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword 
-} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 import { 
     doc, 
     setDoc, 
@@ -12,42 +12,53 @@ import {
     query,
     where,
     getDocs
-} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
 // Login function
 export async function loginUser(username, password, role) {
     try {
-        // Format email for Firebase Auth
-        const email = `${username}@foksi.com`;
+        console.log("=== LOGIN PROCESS START ===");
+        console.log("Username:", username, "Role:", role);
         
-        console.log("Login attempt:", { email, role });
+        // Format email for Firebase Auth - USING @gmail.com
+        const email = `${username}@gmail.com`;
+        console.log("Email for auth:", email);
         
         // Sign in with Firebase Auth
+        console.log("Attempting Firebase Auth sign in...");
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        
-        console.log("Firebase Auth success, UID:", user.uid);
+        console.log("Firebase Auth SUCCESS - UID:", user.uid);
         
         // Get user data from Firestore
+        console.log("Fetching user data from Firestore...");
         const userDoc = await getDoc(doc(db, "users", user.uid));
         
         if (!userDoc.exists()) {
-            throw new Error("Data pengguna tidak ditemukan di database");
+            console.error("User document not found in Firestore");
+            throw new Error("Data pengguna tidak ditemukan di database. Silakan hubungi admin.");
         }
         
         const userData = userDoc.data();
         console.log("User data from Firestore:", userData);
         
+        // Check if user has a role
+        if (!userData.role) {
+            console.error("User has no role in Firestore");
+            throw new Error("Role pengguna tidak ditemukan");
+        }
+        
         // Check role
         if (userData.role !== role) {
+            console.error(`Role mismatch. Expected: ${role}, Got: ${userData.role}`);
             throw new Error(`Role tidak sesuai. Akun ini adalah ${userData.role || 'tidak diketahui'}, bukan ${role}`);
         }
         
         // Store user data in localStorage
         const userToStore = {
             uid: user.uid,
-            username: userData.username,
-            nama: userData.nama,
+            username: userData.username || username,
+            nama: userData.nama || 'User',
             role: userData.role,
             jabatan: userData.jabatan || '',
             regional: userData.regional || '',
@@ -57,18 +68,24 @@ export async function loginUser(username, password, role) {
         
         console.log("Storing user to localStorage:", userToStore);
         localStorage.setItem('user', JSON.stringify(userToStore));
+        console.log("Login SUCCESS! Redirecting...");
         
         // Redirect based on role
-        if (role === 'admin') {
-            window.location.href = 'admin-dashboard.html';
-        } else {
-            window.location.href = 'anggota-dashboard.html';
-        }
+        setTimeout(() => {
+            if (role === 'admin') {
+                window.location.href = 'admin-dashboard.html';
+            } else {
+                window.location.href = 'anggota-dashboard.html';
+            }
+        }, 100);
         
         return { success: true, user: userToStore };
         
     } catch (error) {
-        console.error("Login error:", error);
+        console.error("=== LOGIN ERROR ===");
+        console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
+        console.error("Full error:", error);
         
         // Translate error messages
         let errorMessage = error.message;
@@ -78,16 +95,22 @@ export async function loginUser(username, password, role) {
                 case 'auth/invalid-credential':
                 case 'auth/user-not-found':
                 case 'auth/wrong-password':
-                    errorMessage = "Username atau password salah";
+                    errorMessage = "Username atau password salah. Pastikan username dan password benar.";
                     break;
-                case 'auth/network-request-failed':
-                    errorMessage = "Koneksi internet bermasalah. Coba lagi.";
+                case 'auth/user-disabled':
+                    errorMessage = "Akun ini dinonaktifkan. Hubungi admin.";
                     break;
                 case 'auth/too-many-requests':
                     errorMessage = "Terlalu banyak percobaan gagal. Coba lagi nanti.";
                     break;
+                case 'auth/network-request-failed':
+                    errorMessage = "Koneksi internet bermasalah. Periksa koneksi Anda.";
+                    break;
+                case 'auth/operation-not-allowed':
+                    errorMessage = "Metode login tidak diizinkan. Hubungi admin.";
+                    break;
                 default:
-                    errorMessage = `Error: ${error.code}`;
+                    errorMessage = `Login gagal: ${error.code}`;
             }
         }
         
@@ -98,7 +121,8 @@ export async function loginUser(username, password, role) {
 // Register new user (admin only)
 export async function registerUser(userData) {
     try {
-        const email = `${userData.username}@foksi.com`;
+        // Format email with @gmail.com
+        const email = `${userData.username}@gmail.com`;
         console.log("Registering user with email:", email);
         
         // Create user in Firebase Auth
@@ -129,7 +153,9 @@ export async function registerUser(userData) {
         
         let errorMessage = error.message;
         if (error.code === 'auth/email-already-in-use') {
-            errorMessage = "Username sudah digunakan";
+            errorMessage = "Username sudah digunakan. Coba username lain.";
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage = "Password terlalu lemah. Minimal 6 karakter.";
         }
         
         throw new Error(errorMessage);
@@ -158,8 +184,11 @@ export function checkAuth() {
 
 // Logout function
 export function logoutUser() {
+    console.log("Logging out user...");
     localStorage.removeItem('user');
-    window.location.href = 'index.html';
+    setTimeout(() => {
+        window.location.href = 'index.html';
+    }, 100);
 }
 
 // Check if username exists
