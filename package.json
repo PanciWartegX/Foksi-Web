@@ -1,0 +1,14 @@
+{
+  "name": "absensi-foksi",
+  "version": "1.0.0",
+  "description": "Website Absensi FOKSI",
+  "scripts": {
+    "dev": "npx serve"
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "serve": "^14.0.0"
+  }
+}
